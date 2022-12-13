@@ -1,0 +1,16 @@
+[INPUT]
+btvs = BTV42,TT43.BTV.430106,TT41.BTV.412350.LASER,BTV54
+btv_madx = btv.430042,BTV.430106,btv.412350,btv.412354
+btv_screens= TT43.BTV.430042,TT43.BTV.430106,TT41.BTV.412350.LASER,BTV54
+particle= e
+mass = 0.511e-3
+energy = 18e-3
+n_shot = 10
+n_btv_x = 3
+n_btv_y = 4
+simulate = True
+is_rms = True
+emitta_x = 8.21e-8
+emitta_y = 4.21e-8
+mom_spr = 0.00149
+
