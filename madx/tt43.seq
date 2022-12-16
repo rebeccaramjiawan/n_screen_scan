@@ -1,0 +1,241 @@
+!-------------------------------------------------------
+!   Elements
+!-------------------------------------------------------
+
+//-------------- Bending Magnets
+MBH: RBEND, 
+L := 0.1755 , 
+apertype = ellipse , 
+aperture = {0.02,0.02}, 
+FINT := fint_h_var, 
+hgap = 0.035, 
+k1 := mbh_k1 ; 		! Bending magnet, horizontal
+
+MBV: RBEND, 
+L := 0.1755 , 
+apertype = ellipse , 
+aperture = {0.02,0.02}, 
+FINT := fint_v_var, 
+hgap = 0.035 ;   		! Bending Magnet, vertical  
+
+fint_h_var = 0.25;
+fint_v_var = 0.09;
+
+!specification magnetic lenght 0.1755
+!specification mechanical lenght 0.294
+
+
+//-------------- Quadrupoles
+QUAD: QUADRUPOLE, L := 0.0708,   apertype = ellipse, aperture = {0.02,0.02}; 
+!specification magnetic length 0.0718, but the measured gradient correspond to 
+!a magnetic lenght slightly smaller, i.e. 0.0708 m => this is very important to take
+!into account
+
+
+
+//-------------- Correctors
+COR: KICKER, L := 0.0406,   apertype = ellipse, aperture = {0.02,0.02}; 
+!COR	    : KICKER	  , L := 0.1651; !magnetic length
+!specification magnetic length 0.1654
+!specification mechanical lenght 0.073
+
+
+//-------------- Beam position monitors
+BPM         : MONITOR     , L := 0,   apertype = ellipse, aperture = {0.02,0.02};
+BPMShort    : MONITOR     , L := 0.207,   apertype = ellipse, aperture = {0.02,0.02};
+BPMLong     : MONITOR     , L := 0.207,   apertype = ellipse, aperture = {0.02,0.02};
+
+
+//-------------- Beam observation TV monitors based on screens
+
+BTV         : INSTRUMENT     , L := 0.273,   apertype = ellipse, aperture = {0.02,0.02};
+BTV2	    : INSTRUMENT     , L := 0.354,   apertype = ellipse, aperture = {0.02,0.02};
+
+
+//-------------- Markers
+Start_line  : MARKER      , L := 0;
+End_line    : MARKER      , L := 0;	! apertype = rectangle, aperture = {0.00025,0.00025};
+Mon         : INSTRUMENT     , L := 0;
+
+//-------------- BeamStopper
+Beam_Stopper : INSTRUMENT , L := 0.15;			!0.069775;
+
+
+
+//-------------- Elements proton and secondary beam line
+bpg412445   : INSTRUMENT  , L := 0.248 , aperture = ellipse, aperture = {0.060,0.060}; !old 0.248
+otr2	    : INSTRUMENT  , L := 0.35 , aperture = ellipse, aperture = {0.06,0.06};
+
+plasmacell:   INSTRUMENT , L = 10    , aperture=ellipse ,aperture={0.020 ,0.020}  ;
+iris: 		  INSTRUMENT , l = 0.001 , aperture=ellipse ,aperture={0.005 ,0.005}  ;
+
+table:        INSTRUMENT , L = 2 ;
+
+MQNBR       : QUADRUPOLE  , L := 0.285;
+
+
+MBXFB       : SBEND       , L := 1;
+
+
+BTVSPS      : INSTRUMENT     , L = 0.448;
+
+HEATER	    : SOLENOID	  , L = 0.025 , KS = 0.00017/0.033;
+
+
+
+!-------------------------------------------------------
+!  Start of Sequence
+!-------------------------------------------------------
+
+! central positions
+TT43: SEQUENCE, L = 30 ;
+BEGI.1000: Start_line, AT= 0 ;
+
+BPM_offset = 0.0067;
+BPM_offset2 = 0.0087;
+
+BPM.430028: BPM, AT= 0.18587-BPM_offset;
+MCAWA.430029: COR, AT= 0.26887 ;
+MQAWD.430031: QUAD, AT=  0.465573;
+MQAWF.430034: QUAD, AT=  0.768073;
+MQAWD.430037: QUAD, AT=  1.070573;
+BPM.430039: BPM, AT= 1.242866-BPM_offset;
+MCAWA.430040: COR, AT= 1.325866;
+BTV.430042: btv, AT=  1.635166;
+
+///////////////	Dogleg start ///////////////
+
+MBAWV.430100: MBV, AT= 2.08254;
+BPM.430103: BPM, AT= 2.421073-BPM_offset;
+MCAWA.430104: COR, AT= 2.512073;
+BTV.430106: btv, AT= 2.752373 ;
+MQAWD.430109: QUAD, AT= 2.997772973;
+BeamStopper.430112: Beam_Stopper, AT= 3.2637605 ;
+MQAWF.430118: QUAD, AT= 3.913005947 ;
+MQAWD.430128: QUAD, AT= 4.82823892;
+BPM.430129: BPM, AT= 4.9918389-BPM_offset ;
+MCAWA.430130: COR, AT= 5.0748389;
+
+///////////////	Dogleg end///////////////
+
+
+MBAWV.430200: MBV, AT= 5.743471893;
+BPM.430203: BPM, AT= 6.0062576-BPM_offset;
+MCAWA.430204: COR, AT= 6.0892576 ;
+MQAWF.430205: QUAD, AT= 6.273457561;
+
+
+///////////////	Achromat ///////////////
+
+MBAWH.430300: MBH, AT= 6.688450396;
+BPM.430308: BPM, AT= 7.5010105-BPM_offset ;
+MCAWA.430309: COR, AT= 7.5840105;
+MQAWF.430311: QUAD, AT=7.768210455  ;
+
+///////////////	Common Beam line ///////////////
+
+MBAWH.412343: MBH, AT:= 8.847970514 ;
+BPM.412343: BPM, AT= 9.1744705-BPM_offset2 ;
+MCAWA.412344: COR, AT= 9.2574705;
+MQAWD.412344: QUAD, AT:= 9.441670504;
+BPM.412345: BPM, AT= 10.0149083-BPM_offset2;
+MCAWA.412345: COR, AT= 10.0979083 ;
+MQAWF.412346  : QUAD, AT:= 10.28210825;
+BPM.412347: BPM, AT= 10.855346-BPM_offset2 ;
+MCAWA.412347: COR, AT= 10.938346 ;
+MQAWD.412347: QUAD, AT:= 11.122546 ;
+BPM.412349: BPM, AT= 11.7277709-BPM_offset2 ;
+MCAWA.412349: COR, AT= 11.8107709 ;
+BTV.412350: BTV2, AT= 12.14257094; 					! BTV for Electrons and Protons
+BPM.412351: BPM, AT= 12.8742709-BPM_offset2 ;
+BTV.412353: otr2, at = 13.62057094;					! BTV for Electrons and Protons
+MCAWA.412353: COR, AT= 14.01557094 ;                                    ! Alexey corrector no position monitors after 
+
+
+///////////////	Plasma Cell ///////////////
+
+plasma.e: Mon, AT:= 14.19257094 ;    				! => beginning of the 12m plasma cell
+BTV.412354: Mon, at = 14.24057;					! BTV for Electrons and Protons
+Iris1: Mon, AT= 15.04257094 ;
+plasma_merge: Mon, At= 15.04257094 ;       			! merging_point = 0.5m (standard)
+Iris2: Mon, AT= 25.69257094 ;
+plasma.s: Mon, at= 26.19257094 ;
+
+
+endsequence;
+
+
+!-------------------------------------------------------
+!  Strength Variables
+!-------------------------------------------------------
+kqf430311 :=  26.87175847457627 ;
+kqf430118 :=  19.70352231638418 ;
+kqd430031 :=  -5.0857990559322035 ;
+kqf430034 :=  9.504011548870057 ;
+kqd430037 :=  -8.24012517457627 ;
+kqd430109 :=  -31.725053107344635 ;
+
+!=======================================
+
+kMBAWH430300 :=  -0.5670925 ;		!Angle horizontal bending 1 MBH2003
+kMBAWV =   -0.321465 ;		!Angle vertical   bending   MBV.1002 & MBV.2001
+kMBAWH412343 :=  -0.569608324504889 ;  !Angle horizontal bending 2 MBH2005
+mbh_tilt 	= -0.105103009315855 ;
+
+
+
+//————Strength Dipoles
+
+MBAWV.430100 , ANGLE :=  kMBAWV, TILT := pi/2 ;
+MBAWV.430200 , ANGLE := -kMBAWV, TILT := pi/2 ;
+
+
+MBAWH.430300 , ANGLE :=    kMBAWH430300;
+MBAWH.412343 , ANGLE :=    kMBAWH412343, tilt := mbh_tilt, e1 := var_e1, e2 := var_e2;
+
+//————Strength Quadrupoles
+MQAWD.430031 , K1    :=  kQD430031 ;
+MQAWF.430034 , K1    :=  kQF430034 ;
+MQAWD.430037 , K1    :=  kQD430037 ;
+
+MQAWD.430109 , K1    :=  kQD430109 ;
+MQAWF.430118 , K1    :=  KQF430118  ;
+MQAWD.430128 , K1    :=  kQD430109 ;
+
+MQAWF.430205 , K1    :=  kQF430205;
+
+MQAWF.430311 , K1    :=  kQF430311  ;
+
+MQAWD.412344 , K1    :=  KQD412344 ;
+MQAWF.412346 , K1    :=  KQF412346 ;
+MQAWD.412347 , K1    :=  KQD412347  ;
+
+
+//————Strength Kickers
+MCAWA.430029, vkick  := 0.00, 	hkick = 0;
+MCAWA.430040, vkick  := 0.00, 	hkick = 0;
+MCAWA.430104, vkick  := 0.00, 	hkick = 0;
+MCAWA.430130, vkick  = 0, 	hkick = 0;
+MCAWA.430204, vkick  = 0, 	hkick = 0;
+MCAWA.430309, vkick := kCv430309, hkick = 0;
+
+MCAWA.412344, vkick := kCv412344, hkick := kCh412344;
+
+MCAWA.412345, vkick := kCv412345, hkick := kCh412345;
+MCAWA.412347, vkick := kCv412347, hkick := kCh412347;
+MCAWA.412349, vkick := kCv412349, hkick := kCh412349;
+MCAWA.412353, vkick := kCv412353, hkick := kCh412353;
+
+
+!=======================================
+! Theoretical initial conditions
+!=======================================
+
+BETX0=5;
+ALFX0=0;
+DX0=0;
+DPX0=0;
+BETY0=5;
+ALFY0=0;
+DY0=0.0;
+DPY0=0.0;

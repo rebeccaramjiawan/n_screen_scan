@@ -1,0 +1,50 @@
+!*******************************************
+! Calculate survey of electron line
+!*******************************************
+
+merging_point = 0.85;  		  !merging_point: baseline = 0.85 (standard in iris1)
+emitta=6.387E-08;           !geometric emittance: baseline = 6.387E-08 ; (for p= 16 MeV/c)
+pn= 0.005;	                !momentum spread: baseline = 0.005;
+
+xStart      = -3057.00;
+zStart      =  4223.00 ;
+yStart      =  2380.00 +0.1567 ;
+thetaStart  =  3.605-2*PI ;
+phiStart    =  0.0  ;
+psiStart    =  0.0  ;
+
+xStartSource      = -3055.7861-1.4533E-05 ;
+zStartSource      =  4225.4292+1.4533E-05 ;
+yStartSource      =  2380.1567 ;
+thetaStartSource  =  3.605-2*PI ;
+phiStartSource    =  0.0  ;
+psiStartSource    =  0.0  ;
+
+!-------------------------------------------------------
+!   survey macro
+!-------------------------------------------------------
+
+macro_survey : MACRO =
+    {
+        use, sequence = TT43;
+        SURVEY , x0 = xStart ,
+                 z0 =  zStart ,
+                 y0 =  yStart ,
+             theta0 =  thetaStart ,
+               phi0 =  phiStart  ,
+               psi0 =  psiStart ;
+
+    };
+
+
+ set, format="22.10e";
+
+
+        SURVEY , x0 =  xStart ,
+                 z0 =  zStart ,
+                 y0 =  yStart ,
+             theta0 =  thetaStart ,
+               phi0 =  phiStart  ,
+               psi0 =  psiStart, FILE = "tt43_repo/output/electron_out_survey.tfs" ;
+
+stop;

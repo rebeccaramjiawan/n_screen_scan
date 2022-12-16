@@ -1,0 +1,62 @@
+!********************************************
+! TT43-TT41 (AWAKE e-line) model
+!
+! MADX version MAD-X 5.02.06
+!********************************************
+
+TITLE, "AWAKE TT43 electron line";
+set, format="22.10e";
+
+/***************************************
+* Cleaning .tfs output files
+***************************************/
+
+system, "rm *.tfs";
+
+/**********************************************
+ * TT43
+ **********************************************/
+call, file = "./tt43.seq";
+
+call, file = "./str/focus_iris.str";
+
+
+/**********************************************
+ * Get optics
+ **********************************************/
+
+BEAM, particle=electron, PC=18e-3, exn=2e-6, eyn=2e-6;
+
+use, sequence = TT43, range=#s/PLASMA_MERGE;
+
+set_ini_conditions() : macro = {
+
+    INITBETA0: BETA0,
+      BETX=BETX0,
+      ALFX=ALFX0,
+      MUX=MUX0,
+      BETY=BETY0,
+      ALFY=ALFY0,
+      MUY=MUY0,
+      T=0,
+      DX=DX0,
+      DPX=DPX0,
+      DY=DY0,
+      DPY=DPY0,
+      X=X0,
+      PX=PX0,
+      Y=PY0,
+      PY=PY0,
+      PT=PT0;
+
+};
+
+
+exec, set_ini_conditions();
+
+Select,flag=twiss, clear;
+SELECT, FLAG=TWISS, COLUMN=NAME,KEYWORD,S, L, BETX,ALFX,X,DX,PX,DPX,MUX,BETY,ALFY,Y,DY,PY,DPY,MUY,APER_1,APER_2,k1l,RE11,RE12,RE21,RE22,RE33,RE34,RE43,RE44,RE16,RE26;
+TWISS, beta0=INITBETA0, rmatrix, file="./twiss_tt43_nom.tfs";
+
+
+
