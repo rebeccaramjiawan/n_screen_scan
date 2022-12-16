@@ -248,7 +248,7 @@ class BTV_calc:
         # Calculate and compare expected emittance with calculated emittance
 
         if self.simulate is True:
-            sigma_x, sigma_y, data_all = self._fake_get_data(n_shot, is_rms)
+            sigma_x, sigma_y, data_all = self._fake_get_data(n_shot)
         else:
             sigma_x, sigma_y, data_all = self._get_data(n_shot, is_rms)
         rmat_x = self._rmat_calc("x") # Beam propagation matrix - horizontal
