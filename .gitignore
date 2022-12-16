@@ -135,5 +135,5 @@ dmypy.json
 #pycharm
 .idea
 
-data/
-
+.bak
+madx_cloned/

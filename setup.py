@@ -43,7 +43,7 @@ setup(
 
     author='Rebecca Louise Ramjiawan',
     author_email='rebecca.louise.ramjiawan@cern.ch',
-    description='SHORT DESCRIPTION OF PROJECT',
+    description='Script to measure emittance from beam size measurements from n screens',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     url='',

@@ -1,7 +1,7 @@
 import logging
 import typing
 import abc
-import pyjapc
+# import pyjapc
 
 __version__ = "0.0.5.dev0"
 
@@ -9,7 +9,7 @@ __version__ = "0.0.5.dev0"
 class Device(abc.ABC):
     def __init__(
         self,
-        japc: typing.Optional[pyjapc.PyJapc],
+        # japc: typing.Optional[pyjapc.PyJapc],
         name: str,
         timingSelectorOverride: str = None,
     ):
@@ -20,7 +20,7 @@ class Device(abc.ABC):
             name (str): Name of the device
             timingSelectorOverride (str, optional): String to override the timing selector. Defaults to None.
         """
-        self.japc = japc
+        # self.japc = japc
         if timingSelectorOverride:
             self.cycle_selector_override = timingSelectorOverride
         else:

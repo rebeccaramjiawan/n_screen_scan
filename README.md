@@ -11,3 +11,6 @@ data for analysis.
 
 Tools to plot the 2D projections of the phase space can be found in 
 `plotting.py`.
+
+Plots produced as below:
+![BTV data and beam parameter calculations](data/BTV42_image.py)

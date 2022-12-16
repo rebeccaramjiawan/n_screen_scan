@@ -14,36 +14,40 @@ class BTV_calc:
         self.madx = Madx(stdout=False)
         self.energy = energy
         self.mass = mass
-        self.gamma = self.energy/self.mass
-        self.beta = np.sqrt(1-np.divide(1, np.square(self.gamma)))
-        self.emitta_x = emitta_x
-        self.emitta_y = emitta_y
-        self.mom_spr = mom_spr
+        self.gamma = self.energy/self.mass # approximation to the lorentz gamma
+        self.beta = np.sqrt(1-np.divide(1, np.square(self.gamma))) # lorentz beta
+        self.emitta_x = emitta_x # horizontal emittance in um
+        self.emitta_y = emitta_y # vertical emittance in um
+        self.mom_spr = mom_spr # momentum spread
         self.btv = btv_madx
         self.btvs = btvs
         self.btv_screens = btv_screens
-        self.simulate = simulate
+        self.simulate = simulate # to use simulated or real data
         self.particle = particle
-        self.n_btv_x = n_btv_x
-        self.n_btv_y = n_btv_y
+        self.n_btv_x = n_btv_x # number of horizontal btvs
+        self.n_btv_y = n_btv_y # number of vertical btvs
         self.bad_data = False
-        clone_dir = 'n_screen_scan\madx_cloned'
+        # clone_dir = 'n_screen_scan\madx_cloned'
 
-        if os.path.exists(clone_dir):
-            pass
-        else:
-            print("making directory... " + clone_dir)
-            os.mkdir(clone_dir)
-            git.Git(clone_dir).clone("https://gitlab.cern.ch/acc-models/acc-models-tls.git", depth=1)
+        ## Get up-to-date beamline sequence from Git (can only use from CERN)
+        # if os.path.exists(clone_dir):
+        #     pass
+        # else:
+        #     print("making directory... " + clone_dir)
+        #     os.mkdir(clone_dir)
+        #     git.Git(clone_dir).clone("https://gitlab.cern.ch/acc-models/acc-models-tls.git", depth=1)
 
+        ## Call madx files (if not on-site at CERN)
         current_dir = os.getcwd()
-        os.chdir(clone_dir + '/acc-models-tls/awake_injection/tt43/line')
-        self.madx.call(file=os.getcwd() + '/general_tt43.madx')
-        self.madx.call(file=os.getcwd() + '/tt43.seq')
-        self.madx.call(file=os.getcwd() + '/str/focus_btv54.str')
+        # os.chdir(clone_dir + '/acc-models-tls/awake_injection/tt43/line')
+        os.chdir(current_dir + '\\n_screen_scan\madx\\')
+        self.madx.call(file=os.getcwd() + '\\general_tt43.madx')
+        self.madx.call(file=os.getcwd() + '\\tt43.seq')
+        self.madx.call(file=os.getcwd() + '\\str/focus_btv54.str')
         os.chdir(current_dir)
         sequence_name = self.madx.sequence()
 
+        # Define guess of initial beam parameters from model params
         variables = self.madx.globals
         self.betx0 = variables['betx0']
         self.bety0 = variables['bety0']
@@ -54,6 +58,7 @@ class BTV_calc:
         self.dpx0 = variables["dpx0"]
         self.dpy0 = variables["dpy0"]
 
+        # Set up sequence and strengths of magnets
         self.sequence_name = str(sequence_name)[11:-1]
         self.madx.option(echo=False, warn=True, info=False, debug=False, verbose=False)
         self.madx.use(sequence=self.sequence_name)
@@ -74,6 +79,7 @@ class BTV_calc:
         self.disp_y = (twiss['dy'][btv_ind])
 
     def r_val_calc(self, btv1, *args):
+        # Calculate the R-matrix parameters which quantify the beam propagation in 6D
         self.madx.select(flag='twiss',
                          column=['name', 'keyword', 'k1l', 'k2l', 'k3l', 's', 'l', 'betx', 'bety', 'alfx', 'alfy', 'dx',
                                  'dy', 'mux', 'muy', 'RE11', 'RE12', 'RE33', 'RE34'])
@@ -117,6 +123,7 @@ class BTV_calc:
         return r11, r12, r33, r34, r21, r22, r43, r44
 
     def _rmat_calc(self, dim):
+        # Collate the R-matrix parameters between different BTVs
         btv = self.btv
         rmat = []
         if dim == "x":
@@ -153,6 +160,9 @@ class BTV_calc:
         return rmat
 
     def _btv_calc(self, rmat, sigma, disp):
+        # Fit to the data to estimate beam parameters, the more BTVs the more
+        # params you can estimate because dimensionality must match or underconstrained
+
         epsilon = beta = gamma = alpha = dispersion = deriv_dispersion = delta = 0
         if len(sigma) == 3:
             b = sigma
@@ -235,6 +245,8 @@ class BTV_calc:
         return epsilon, beta, alpha, gamma, dispersion, deriv_dispersion, delta * 10 ** -3
 
     def emit_calc(self, n_shot, is_rms):
+        # Calculate and compare expected emittance with calculated emittance
+
         if self.simulate is True:
             sigma_x, sigma_y, data_all = self._fake_get_data(n_shot, is_rms)
         else:
@@ -269,6 +281,7 @@ class BTV_calc:
         return estimates, data_all, twiss
 
     def _sim_data(self):
+        # If not at CERN i.e. can't collect data, can fake the data
         twiss = self.madx.twiss(BETX=self.betx0, ALFX=self.alfx0, DX=self.dx0, DPX=self.dpx0, BETY=self.bety0,
                                 ALFY=self.alfy0, DY=self.dy0, DPY=self.dpy0, x=0, px=0, y=0, py=0,
                                 RMATRIX=True)
@@ -337,7 +350,7 @@ class BTV_calc:
         self.madx.use(SEQUENCE=self.sequence_name, range="#s/plasma_merge")
         rms_x = np.empty(shape=(len(self.btvs),))
         rms_y = np.empty(shape=(len(self.btvs),))
-        import pickle
+
         file = open("data/data_4screen_2020-06-26_12_24_29.563667.p", "rb")
         object_file = pickle.load(file)
         file.close()
@@ -397,7 +410,7 @@ class BTV_calc:
                 rms = np.sqrt(no_zero.dot((x_ax - cent) ** 2) / no_zero.sum())
                 guess = [np.max(proj) - np.min(proj), cent, rms, np.min(proj)]
                 try:
-                    popt_x, _ = curve_fit(self.gaussian, x_ax, proj, guess)
+                    popt_x, popt_x_err = curve_fit(self.gaussian, x_ax, proj, guess)
                 except:
                     print("x " + str(btv) + " failed to fit")
                     popt_x = guess
@@ -410,14 +423,14 @@ class BTV_calc:
                 rms = np.sqrt(no_zero.dot((y_ax - cent) ** 2) / no_zero.sum())
                 guess = [np.max(proj) - np.min(proj), cent, rms, np.min(proj)]
                 try:
-                    popt_y, _ = curve_fit(self.gaussian, y_ax, proj, guess)
+                    popt_y, popt_y_err = curve_fit(self.gaussian, y_ax, proj, guess)
                 except:
                     print("y " + str(btv) + " failed to fit")
                     popt_y = guess
-                sigma_x[j, i] = (popt_x[2] ** 2)
-                sigma_y[j, i] = (popt_y[2] ** 2)
-                mu_x[j, i] = (popt_x[2])
-                mu_y[j, i] = (popt_y[2])
+                sigma_x[j, i] = popt_x[2]
+                sigma_y[j, i] = popt_y[2]
+                mu_x[j, i] = popt_x[1]
+                mu_y[j, i] = popt_y[1]
                 data_all[btvs[i]]["fit_x"] = self.gaussian(x_ax, *popt_x)
                 data_all[btvs[i]]["fit_y"] = self.gaussian(y_ax, *popt_y)
 
@@ -432,12 +445,17 @@ class BTV_calc:
             data_all[btv]["mu_x"] = np.average(mu_x[:, i], axis=0)
             data_all[btv]["mu_y"] = np.average(mu_y[:, i], axis=0)
             data_all[btv]["amp"] = np.max(data_all[btv]["image"])
+            data_all[btv]['err_x'] = np.average(sigma_x[:, i], axis=0)/np.sqrt(n_shot)
+            data_all[btv]['err_y'] = np.average(sigma_y[:, i], axis=0)/np.sqrt(n_shot)
+            data_all[btv]['mu_err_x'] = np.average(sigma_x[:, i], axis=0)/np.sqrt(2*n_shot)
+            data_all[btv]['mu_err_y'] = np.average(sigma_y[:, i], axis=0)/np.sqrt(2*n_shot)
         return np.average(sigma_x, axis=0), np.average(sigma_y, axis=0), data_all
 
     def gaussian(self, x, amp, cen, wid, off):
         return amp * np.exp(-(x - cen) ** 2 / (2 * wid ** 2)) + off
 
     def track(self):
+        # Track beam through simulation of beamline, set number of particles below
         seed = 42
         sigmas = 3
         betax = self.betx0
@@ -460,9 +478,9 @@ class BTV_calc:
         with self.madx.batch():
             for i in range(nparticles):
                 np.random.seed(seed + i)
-                x0 = np.random.normal() * np.sqrt(Ex * betax)
+                x0 = np.random.normal() * np.sqrt(Ex * betax) + 0.001
                 np.random.seed(seed + 1 + i)
-                y0 = np.random.normal() * np.sqrt(Ey * betay)
+                y0 = np.random.normal() * np.sqrt(Ey * betay) - 0.001
                 np.random.seed(seed + 2 + i)
                 px0 = (np.random.normal() * np.sqrt(Ex * betax) - alphax * x0) / betax
                 np.random.seed(seed + 3 + i)
@@ -482,13 +500,13 @@ class BTV_calc:
         data_all['meas'] = estimates
         now = str(datetime.datetime.now()).replace(' ', '_').replace(':', '_')
         if not self.bad_data:
-            pickle.dump(data_all, open('./data/data_n_screen_' + now + '.p', 'wb'))
+            pickle.dump(data_all, open('n_screen_scan/data/data_n_screen_' + now + '.p', 'wb'))
 
     def _json_data(self, estimates, data_all):
         data_all['meas'] = estimates
         now = str(datetime.datetime.now()).replace(' ', '_').replace(':', '_')
         if not self.bad_data:
-            with open('./data/data_n_screen_' + now + '.json', 'w') as outfile:
+            with open('n_screen_scan/data/data_n_screen_' + now + '.json', 'w') as outfile:
                 outfile.write(json.dumps(data_all, cls=myJSONEncoder))
 
 
