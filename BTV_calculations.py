@@ -160,14 +160,14 @@ class BTV_calc:
         return rmat
 
     def _btv_calc(self, rmat, sigma, disp):
-        # Fit to the data to estimate beam parameters, the more BTVs the more
+        # Fit to the data to estimate beam parameters, more BTVs mean more
         # params you can estimate because dimensionality must match or underconstrained
 
         epsilon = beta = gamma = alpha = dispersion = deriv_dispersion = delta = 0
         if len(sigma) == 3:
             b = sigma
             q = np.dot(np.linalg.inv(rmat[:3, :3]), b)
-            # convert output of fit (q) to Twiss parameters and momentum spread
+            # convert output of matrix multiplication (q) to Twiss parameters and momentum spread
             gamma_r = np.sqrt(self.energy ** 2 + self.mass ** 2) / self.mass
             epsilon = np.sqrt(np.abs((q[0] * q[2]) - (q[1] * q[1])))
             beta = q[0] / epsilon
@@ -178,7 +178,7 @@ class BTV_calc:
         elif len(sigma) == 4:
             b = sigma
             q = np.dot(np.linalg.inv(rmat[:4, :4]), b)
-            # convert output of fit (q) to Twiss parameters and momentum spread
+            # convert output of (q) to Twiss parameters and momentum spread
             gamma_r = np.sqrt(self.energy ** 2 + self.mass ** 2) / self.mass
             epsilon = np.sqrt(np.abs((q[0] * q[2]) - (q[1] * q[1])))
             beta = q[0] / epsilon
@@ -192,7 +192,7 @@ class BTV_calc:
             b = sigma * 10 ** -6 - np.square(np.multiply(diff_disp, self.mom_spr))
             # rmat = np.append(rmat, eta, axis=1)
             q = np.dot(np.linalg.inv(rmat[:5, :5]), b)
-            # convert output of fit (q) to Twiss parameters and momentum spread
+            # convert output of (q) to Twiss parameters and momentum spread
             gamma_r = np.sqrt(self.energy ** 2 + self.mass ** 2) / self.mass
             a = q[0] - (q[3] ** 2) / (self.mom_spr ** 2)
             b = q[1] + (q[3] * q[4]) / (self.mom_spr ** 2)
@@ -251,8 +251,8 @@ class BTV_calc:
             sigma_x, sigma_y, data_all = self._fake_get_data(n_shot, is_rms)
         else:
             sigma_x, sigma_y, data_all = self._get_data(n_shot, is_rms)
-        rmat_x = self._rmat_calc("x")
-        rmat_y = self._rmat_calc("y")
+        rmat_x = self._rmat_calc("x") # Beam propagation matrix - horizontal
+        rmat_y = self._rmat_calc("y") # Beam propagation matrix - vertical
         print("btv calc x")
         epsilon_x, beta_x, alpha_x, gamma_x, dispersion_x, deriv_dispersion_x, delta_x = self._btv_calc(
             rmat_x[0:self.n_btv_x, 0:self.n_btv_x],
@@ -279,18 +279,6 @@ class BTV_calc:
                                 RMATRIX=True)
         self._json_data(estimates, data_all)
         return estimates, data_all, twiss
-
-    def _sim_data(self):
-        # If not at CERN i.e. can't collect data, can fake the data
-        twiss = self.madx.twiss(BETX=self.betx0, ALFX=self.alfx0, DX=self.dx0, DPX=self.dpx0, BETY=self.bety0,
-                                ALFY=self.alfy0, DY=self.dy0, DPY=self.dpy0, x=0, px=0, y=0, py=0,
-                                RMATRIX=True)
-        btv_ind = [any(b in s.lower() for b in self.btv) for s in twiss["name"]]
-        print(twiss['bety'][btv_ind][0], twiss['alfy'][btv_ind][0], twiss['dy'][btv_ind][0])
-        sigma_x = np.square(twiss['sigma_x'][btv_ind])
-        sigma_y = np.square(twiss['sigma_y'][btv_ind])
-        self.track()
-        return sigma_x, sigma_y
 
     def _get_data(self, n_shot, is_rms):
         # import pyjapc
@@ -346,7 +334,7 @@ class BTV_calc:
         #
         # print('time enlapsed = ', t1 - t0)
 
-        # USE FAKE DATA FOR TESTING
+        #  If not at CERN i.e. can't collect data, can fake the data
         self.madx.use(SEQUENCE=self.sequence_name, range="#s/plasma_merge")
         rms_x = np.empty(shape=(len(self.btvs),))
         rms_y = np.empty(shape=(len(self.btvs),))
@@ -361,29 +349,32 @@ class BTV_calc:
             data_all = object_file
         return rms_x, rms_y, data_all
 
-    def _fake_get_data(self, n_shot, is_rms):
+    def _fake_get_data(self, n_shot):
+        # Initialise
         data_all = dict()
         sigma_x = np.zeros((n_shot, len(self.btv)))
         sigma_y = np.zeros((n_shot, len(self.btv)))
         mu_x = np.zeros((n_shot, len(self.btv)))
         mu_y = np.zeros((n_shot, len(self.btv)))
-        fit_x = np.zeros((n_shot, len(self.btv)))
-        fit_y = np.zeros((n_shot, len(self.btv)))
         btvs = self.btvs
 
         # xmin=-0.003 * np.ones(shape=(len(self.btv), 1))
         # xmax = 0.003 * np.ones(shape=(len(self.btv), 1))
         # ymin = -0.003 * np.ones(shape=(len(self.btv), 1))
         # ymax = 0.003 * np.ones(shape=(len(self.btv), 1))
+
+        # Dimensions of BTV for plotting - work on automating this
         xmin = [[-0.003], [-0.003], [-0.006], [-0.002]]
         xmax = [[0.003], [0.003], [0.006], [0.002]]
         ymin = [[-0.003], [-0.003], [-0.006], [-0.002]]
         ymax = [[0.003], [0.003], [0.006], [0.002]]
 
+        # Initialise
         for i, btv in enumerate(self.btv):
             data_all[btvs[i]] = dict()
             data_all[btvs[i]] = {"image": None}
 
+        # Extract beam parameters from 2D image data
         for j in range(n_shot):
             ptc_output = self.track()
             for i, btv in enumerate(self.btv):
@@ -434,6 +425,7 @@ class BTV_calc:
                 data_all[btvs[i]]["fit_x"] = self.gaussian(x_ax, *popt_x)
                 data_all[btvs[i]]["fit_y"] = self.gaussian(y_ax, *popt_y)
 
+        # Collate together for all BTVs
         for i, btv in enumerate(self.btvs):
             data_all[btv]["image"] /= n_shot
             data_all[btv]["pro_x"] = np.sum(data_all[btv]["image"], axis=1)
@@ -465,6 +457,7 @@ class BTV_calc:
         Ex = self.emitta_x
         Ey = self.emitta_y
         nparticles = 5000
+        # Set up beam tracking in MAD-X
         self.madx.use(SEQUENCE=self.sequence_name, range="#s/plasma_merge")
         twiss = self.madx.twiss(BETX=self.betx0, ALFX=self.alfx0, DX=self.dx0, DPX=self.dpx0, BETY=self.bety0,
                                 ALFY=self.alfy0, DY=self.dy0, DPY=self.dpy0, x=0, px=0, y=0, py=0)
@@ -474,7 +467,6 @@ class BTV_calc:
         for monitor in self.btv:
             self.madx.ptc_observe(place=monitor)
         ## Perform tracking
-
         with self.madx.batch():
             for i in range(nparticles):
                 np.random.seed(seed + i)
@@ -495,14 +487,15 @@ class BTV_calc:
         ptc_output = self.madx.table.trackone
         return ptc_output
 
-
     def _pickle_data(self, estimates, data_all):
+        # Save data in pickle format
         data_all['meas'] = estimates
         now = str(datetime.datetime.now()).replace(' ', '_').replace(':', '_')
         if not self.bad_data:
             pickle.dump(data_all, open('n_screen_scan/data/data_n_screen_' + now + '.p', 'wb'))
 
     def _json_data(self, estimates, data_all):
+        # Save data in JSON format
         data_all['meas'] = estimates
         now = str(datetime.datetime.now()).replace(' ', '_').replace(':', '_')
         if not self.bad_data:
