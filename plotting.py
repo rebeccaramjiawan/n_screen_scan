@@ -153,8 +153,8 @@ def plot_twiss(btv_calc_inst, btv, btvs, gamma_r, estimates, data_xy, twiss):
     # Propagate Twiss values calculated from data using the beamline model
 
     plt.figure(figsize=(15, 8))
-    plt.plot(twiss["s"], twiss["betx"], '--', color="tab:blue", label=r"design $\beta_x$")
-    plt.plot(twiss["s"], twiss["bety"], '--', color="darkorange", label=r"design $\beta_y$")
+    plt.plot(twiss["s"], twiss["betx"], '--', color="tab:blue", label=r"$\beta_x$ from the model")
+    plt.plot(twiss["s"], twiss["bety"], '--', color="darkorange", label=r"$\beta_y$ from the model")
     for i in twiss["name"]:
         if twiss["s"][twiss["name"] == i] < twiss["s"][twiss["name"] == (btv[0] + ":1")]:
             pass
@@ -181,10 +181,10 @@ def plot_twiss(btv_calc_inst, btv, btvs, gamma_r, estimates, data_xy, twiss):
             alpha_y = -beta_y_0 * r11 * r21 + r22 * r11 * alpha_y_0 + r12 * r21 * alpha_y_0 - gamma_y_0 * r12 * r22
             s = np.append(s, twiss["s"][twiss["name"] == i])
 
-    plt.plot(s, beta_x, color="tab:blue", label=r"propagated $\beta_x$")
-    plt.plot(s, beta_y, color="darkorange", label=r"propagated $\beta_y$")
+    plt.plot(s, beta_x, color="tab:blue", label=r"$\beta_x$ from data")
+    plt.plot(s, beta_y, color="darkorange", label=r"$\beta_y$ from data")
     plt.xlabel("$s$ [m]", labelpad=0.5)
-    plt.title(r"$\beta$ functions propagated from initial estimate at BTV")
+    plt.title(r"$\beta$-functions from data vs. from the model")
     plt.ylabel(r"$\beta_x, \beta_y$ [m]", labelpad=5)
     plt.ylim(-20, np.max(np.hstack((twiss["betx"], twiss["bety"], beta_x, beta_y))) * 1.1)
     plt.xlim(0, twiss["s"][-1])
@@ -192,4 +192,5 @@ def plot_twiss(btv_calc_inst, btv, btvs, gamma_r, estimates, data_xy, twiss):
         plt.plot([twiss["s"][twiss["name"] == (i + ":1")][0], twiss["s"][twiss["name"] == (i + ":1")][0]], [-100, 400],
                  '--',
                  color="gray", linewidth=1)
-    plt.legend()
+    plt.plot([],  '--',  color="gray", linewidth=1, label="BTV")
+    plt.legend(loc=1)
